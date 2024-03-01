@@ -1,3 +1,3 @@
 run:
-	go build main.go
+	go build cmd/main.go
 	main.exe

@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vitalis-virtus/chat-websockets-go/internal/handler"
+	"github.com/vitalis-virtus/go-chat-websockets/internal/handlers"
 )
 
 func New() *http.Server {
 	r := gin.Default()
 
-	r.GET("/ws", handler.WebSocketConnect)
+	r.GET("/ws", handlers.WebSocketConnect)
 
 	return &http.Server{
 		Addr:    ":8080",
