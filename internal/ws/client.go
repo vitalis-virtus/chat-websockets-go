@@ -57,7 +57,30 @@ func (c *client) Launch(ctx context.Context) {
 }
 
 func (c *client) launch(ctx context.Context) {
+	var wg sync.WaitGroup
 
+	cancellation, cancel := context.WithCancel(ctx)
+	defer func() {
+		cancel()
+		c.write(websocket.CloseMessage)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.read(cancellation)
+		cancel()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.ping(cancellation)
+		cancel()
+	}()
+
+	wg.Wait()
+	c.done <- struct{}{}
 }
 
 func (c *client) Write(m models.WebSocketMessage) error {
@@ -81,6 +104,55 @@ func (c *client) Done() <-chan interface{} {
 }
 
 func (c *client) Error() <-chan error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) write(message int) {
+	//TODO implement me
+	panic("implement me")
+}
+
+// read is responsible for listening to incoming messages. It publishes them to the channel (the channel is returned by Listen method). The goroutine is finished when the context is done or when the read operation returns an erro
+func (c *client) read(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			var msg models.WebSocketMessage
+			err := c.ws.ReadJSON(&msg)
+			if err != nil {
+				c.handleError(err)
+				return
+			}
+
+			c.messages <- msg
+		}
+	}
+}
+
+// ping is responsible for sending periodical ping. The goroutine is finished when the context is done
+func (c *client) ping(ctx context.Context) {
+	pingTicker := time.NewTicker(pingPeriod)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-pingTicker.C:
+			c.send(websocket.PingMessage)
+		}
+	}
+}
+
+func (c *client) handleError(err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *client) send(message int) {
 	//TODO implement me
 	panic("implement me")
 }
