@@ -1,4 +1,4 @@
-module github.com/vitalis-virtus/chat-websockets-go
+module github.com/vitalis-virtus/go-chat-websockets
 
 go 1.22.0
 

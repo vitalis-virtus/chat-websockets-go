@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/vitalis-virtus/chat-websockets-go/internal/models"
+	"github.com/vitalis-virtus/go-chat-websockets/internal/models"
 	"sync"
 	"time"
 )
@@ -122,7 +122,7 @@ func (c *client) write(messageType int) {
 	}
 }
 
-// read is responsible for listening to incoming messages. It publishes them to the channel (the channel is returned by Listen method). The goroutine is finished when the context is done or when the read operation returns an erro
+// read is responsible for listening to incoming messages. It publishes them to the channel (the channel is returned by Listen method). The goroutine is finished when the context is done or when the read operation returns an error
 func (c *client) read(ctx context.Context) {
 	for {
 		select {
