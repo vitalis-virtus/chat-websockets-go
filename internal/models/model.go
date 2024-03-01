@@ -1,3 +1,6 @@
 package models
 
-type WebSocketMessage struct{}
+type WebSocketMessage struct {
+	Type    string            `json:"type"`
+	Content map[string]string `json:"content"`
+}
