@@ -54,6 +54,7 @@ func startClient(ctx context.Context, wsConn *websocket.Conn) {
 	}()
 
 	client.Launch(ctx)
+	wshandlers.MemberJoin(clients, client)
 
 	for {
 		select {
