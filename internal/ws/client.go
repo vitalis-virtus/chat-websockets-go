@@ -84,8 +84,11 @@ func (c *client) launch(ctx context.Context) {
 }
 
 func (c *client) Write(m models.WebSocketMessage) error {
-	//TODO implement me
-	panic("implement me")
+	c.Lock()
+	defer c.Unlock()
+
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	return c.ws.WriteJSON(m)
 }
 
 func (c *client) Close() {
@@ -108,9 +111,15 @@ func (c *client) Error() <-chan error {
 	panic("implement me")
 }
 
-func (c *client) write(message int) {
-	//TODO implement me
-	panic("implement me")
+// write private method sends service messages (ping, close connection)
+func (c *client) write(messageType int) {
+	c.Lock()
+	defer c.Unlock()
+
+	c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+	if err := c.ws.WriteMessage(messageType, nil); err != nil {
+		c.handleError(err)
+	}
 }
 
 // read is responsible for listening to incoming messages. It publishes them to the channel (the channel is returned by Listen method). The goroutine is finished when the context is done or when the read operation returns an erro
