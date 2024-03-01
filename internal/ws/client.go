@@ -2,6 +2,7 @@ package ws
 
 import (
 	"context"
+	"errors"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/vitalis-virtus/chat-websockets-go/internal/models"
@@ -18,19 +19,12 @@ const (
 
 // Client responsible for simplifying work with WebSocket
 type Client interface {
-	// ID returns a unique identifier of the WebSocket connection
 	ID() string
-	// Launch launches the client, so it starts listening to new messages
 	Launch(ctx context.Context)
-	// Write sends a message `m` back to the client
 	Write(m models.WebSocketMessage) error
-	// Close closes WebSocket connection
-	Close()
-	// Listen returns a channel with incoming messages
+	Close() error
 	Listen() <-chan models.WebSocketMessage
-	// Done returns a channel that closes when work is done (WebSocket connection closed or should be closed)
 	Done() <-chan interface{}
-	// Error returns a channel with errors that happened during WebSocket listening
 	Error() <-chan error
 }
 
@@ -44,10 +38,14 @@ type client struct {
 	sync.Once
 }
 
+type WebSocketClientsPool []Client
+
+// ID returns a unique identifier of the WebSocket connection
 func (c *client) ID() string {
 	return c.id
 }
 
+// Launch launches the client, so it starts listening to new messages
 func (c *client) Launch(ctx context.Context) {
 	c.ws.SetReadLimit(maxMessageSize)
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
@@ -83,6 +81,7 @@ func (c *client) launch(ctx context.Context) {
 	c.done <- struct{}{}
 }
 
+// Write sends a message `m` back to the client
 func (c *client) Write(m models.WebSocketMessage) error {
 	c.Lock()
 	defer c.Unlock()
@@ -91,24 +90,25 @@ func (c *client) Write(m models.WebSocketMessage) error {
 	return c.ws.WriteJSON(m)
 }
 
-func (c *client) Close() {
-	//TODO implement me
-	panic("implement me")
+// Close closes WebSocket connection
+func (c *client) Close() error {
+	close(c.messages)
+	return c.ws.Close()
 }
 
+// Listen returns a channel with incoming messages
 func (c *client) Listen() <-chan models.WebSocketMessage {
-	//TODO implement me
-	panic("implement me")
+	return c.messages
 }
 
+// Done returns a channel that closes when work is done (WebSocket connection closed or should be closed)
 func (c *client) Done() <-chan interface{} {
-	//TODO implement me
-	panic("implement me")
+	return c.done
 }
 
+// Error returns a channel with errors that happened during WebSocket listening
 func (c *client) Error() <-chan error {
-	//TODO implement me
-	panic("implement me")
+	return c.errors
 }
 
 // write private method sends service messages (ping, close connection)
@@ -151,19 +151,22 @@ func (c *client) ping(ctx context.Context) {
 			return
 
 		case <-pingTicker.C:
-			c.send(websocket.PingMessage)
+			c.write(websocket.PingMessage)
 		}
 	}
 }
 
 func (c *client) handleError(err error) {
-	//TODO implement me
-	panic("implement me")
-}
+	var closeError *websocket.CloseError
+	if errors.As(err, &closeError) {
+		return
+	}
 
-func (c *client) send(message int) {
-	//TODO implement me
-	panic("implement me")
+	if errors.Is(err, websocket.ErrCloseSent) {
+		return
+	}
+
+	c.errors <- err
 }
 
 func NewWebSocketClient(ws *websocket.Conn) Client {
